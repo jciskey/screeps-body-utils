@@ -1,0 +1,39 @@
+[package]
+name = "screeps-body-utils"
+version = "0.1.0"
+edition = "2024"
+authors = ["Shane Madden"]
+documentation = "https://docs.rs/screeps-body-utils/"
+include = [
+    "Cargo.toml",
+    "src/**/*",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/jciskey/screeps-body-utils/"
+description = "Additional utility functionality for Creep bodies for Screeps: World not included in screeps-game-api"
+
+[lib]
+name = "screeps_body_utils"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+const_soft_float = "0.1.4"
+itertools = "0.14.0"
+screeps-game-api = "0.22"
+serde = { version = "1.0.219", features = ["derive"] }
+
+[features]
+default = []
+
+[profile.release]
+lto = true
+
+[dev-dependencies]
+assert_float_eq = "1.1.4"
+enum-iterator = "2.1.0"
