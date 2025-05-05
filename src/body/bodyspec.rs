@@ -513,14 +513,16 @@ pub enum BodySpecValidationError {
 /// use screeps_body_utils::body::{BodySpec, PartSpec};
 /// use screeps_body_utils::boost::AbstractBoost;
 ///
+/// // Set up some basic PartSpecs
 /// let work = PartSpec::new_unboosted_part(Part::Work);
 /// let unboosted_move = PartSpec::new_unboosted_part(Part::Move);
 /// let t2_move = PartSpec::new_boosted_part(Part::Move, AbstractBoost::T2Move);
 ///
 /// let work_parts = vec![work; 5];
 /// let unboosted_move_parts = vec![unboosted_move; 5];
-/// let t2_move_parts = vec![t2_move; 4];
+/// let t2_move_parts = vec![t2_move; 2];
 ///
+/// // Create some body layouts
 /// let mut unboosted_body = Vec::new();
 /// unboosted_body.extend(work_parts.clone());
 /// unboosted_body.extend(unboosted_move_parts);
@@ -528,13 +530,22 @@ pub enum BodySpecValidationError {
 /// t2_body.extend(work_parts.clone());
 /// t2_body.extend(t2_move_parts);
 ///
+/// // Create actual BodySpecs for calculations
 /// let unboosted_bodyspec = BodySpec::new(&unboosted_body);
 /// let t2_bodyspec = BodySpec::new(&t2_body);
 ///
+/// // Verify that the T2 Move boosts don't affect the amount of energy harvested by the body
 /// assert_eq!(HARVEST_POWER * 5, unboosted_bodyspec.harvest_energy_amount());
 /// assert_eq!(HARVEST_POWER * 5, t2_bodyspec.harvest_energy_amount());
+///
+/// // Verify that even though the T2 body has less move parts, it can still move offroad without
+/// // incurring any net fatigue each tick
 /// assert_eq!(0, unboosted_bodyspec.plains_move_net_exhaustion());
 /// assert_eq!(0, t2_bodyspec.plains_move_net_exhaustion());
+///
+/// // Verify that the net fatigue generation on swamp tiles is lower with the T2 Move parts
+/// assert_eq!(40, unboosted_bodyspec.swamp_move_net_exhaustion());
+/// assert_eq!(38, t2_bodyspec.swamp_move_net_exhaustion());
 /// ```
 #[derive(Debug, PartialEq, Hash, Clone)]
 pub struct BodySpec {
@@ -551,6 +562,25 @@ impl BodySpec {
     /// needed to do something, an unvalidated BodySpec object could be useful. This method is
     /// there for the latter case, or for if you've already done validation yourself and just want
     /// the BodySpec to work with.
+    ///
+    /// ```rust
+    /// use screeps::{Part, HARVEST_POWER};
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    ///
+    /// let work = PartSpec::new_unboosted_part(Part::Work);
+    /// let unboosted_move = PartSpec::new_unboosted_part(Part::Move);
+    ///
+    /// let work_parts = vec![work; 5];
+    /// let unboosted_move_parts = vec![unboosted_move; 5];
+    ///
+    /// let mut unboosted_body = Vec::new();
+    /// unboosted_body.extend(work_parts);
+    /// unboosted_body.extend(unboosted_move_parts);
+    ///
+    /// let unboosted_bodyspec = BodySpec::new(&unboosted_body);
+    ///
+    /// assert_eq!(HARVEST_POWER * 5, unboosted_bodyspec.harvest_energy_amount());
+    /// ```
     pub fn new(body: &[PartSpec]) -> Self {
         Self {
             body: body.iter().copied().collect(),
@@ -558,6 +588,20 @@ impl BodySpec {
     }
 
     /// Does basic validation of a provided body spec before creating a BodySpec object.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let body = vec!(m);
+    /// let res = BodySpec::validated_new(&body);
+    /// assert!(res.is_ok());
+    ///
+    /// let oversized_body = vec![m; 51];
+    /// let res = BodySpec::validated_new(&oversized_body);
+    /// assert!(res.is_err());
+    /// ```
     pub fn validated_new(body: &[PartSpec]) -> Result<Self, BodySpecValidationError> {
         // Unwrap is safe here because this u32 is actually the constant 50
         if body.len() > MAX_CREEP_SIZE.try_into().unwrap() {
@@ -567,12 +611,58 @@ impl BodySpec {
         }
     }
 
+    /// Returns the parts that make up this creep body.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(m, w);
+    /// let bodyspec = BodySpec::new(&body);
+    /// let parts = bodyspec.get_parts();
+    /// assert_eq!(Part::Move, parts[0]);
+    /// assert_eq!(Part::Work, parts[1]);
+    /// ```
+    pub fn get_parts(&self) -> Vec<Part> {
+        let mut v = Vec::with_capacity(self.body.len());
+        v.extend(self.body.iter().map(|p| p.part));
+        v
+    }
+
     /// Calculates the current hits that a creep has.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::extra::CREEP_HITS_PER_PART;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(m, w);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(CREEP_HITS_PER_PART * 2, bodyspec.hits());
+    /// ```
     pub fn hits(&self) -> u32 {
         self.body.iter().fold(0, |acc, p| acc + p.hits)
     }
 
     /// Calculates the effective damage that a creep can sustain.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::extra::CREEP_HITS_PER_PART;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// use screeps_body_utils::boost::AbstractBoost;
+    /// 
+    /// // Setup a boosted-Tough body
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let t = PartSpec::new_boosted_part(Part::Tough, AbstractBoost::T3Tough);
+    /// let body = vec!(m, t);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(433, bodyspec.effective_hits());
+    /// ```
     pub fn effective_hits(&self) -> u32 {
         self.body.iter().fold(0.0, |acc, p| acc + p.get_damage_capacity()).floor() as u32
     }
@@ -593,77 +683,256 @@ impl BodySpec {
     }
 
     /// Calculates the amount of resources that a creep can store.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::CARRY_CAPACITY;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let c = PartSpec::new_unboosted_part(Part::Carry);
+    /// let body = vec!(c, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(CARRY_CAPACITY, bodyspec.carry_capacity());
+    /// ```
     pub fn carry_capacity(&self) -> u32 {
         self.get_u32_active_parts_of_type(Part::Carry).fold(0, |acc, p| acc + p.get_carry_capacity())
     }
 
     /// Calculates the melee attack damage that a creep can deal.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::ATTACK_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let a = PartSpec::new_unboosted_part(Part::Attack);
+    /// let body = vec!(a, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(ATTACK_POWER, bodyspec.attack_damage());
+    /// ```
     pub fn attack_damage(&self) -> u32 {
         self.get_u32_active_parts_of_type(Part::Attack).fold(0, |acc, p| acc + p.get_attack_damage())
     }
 
     /// Calculates the ranged attack damage that a creep can deal.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::RANGED_ATTACK_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let r = PartSpec::new_unboosted_part(Part::RangedAttack);
+    /// let body = vec!(r, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(RANGED_ATTACK_POWER, bodyspec.ranged_attack_damage());
+    /// ```
     pub fn ranged_attack_damage(&self) -> u32 {
         self.get_u32_active_parts_of_type(Part::RangedAttack).fold(0, |acc, p| acc + p.get_ranged_attack_damage())
     }
 
     /// Calculates the ranged mass attack damage that a creep can deal to a single target at a
     /// specific distance.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::extra::RANGED_MASS_ATTACK_POWER_RANGE_1;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let r = PartSpec::new_unboosted_part(Part::RangedAttack);
+    /// let body = vec!(r, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(RANGED_MASS_ATTACK_POWER_RANGE_1, bodyspec.ranged_mass_attack_damage_at_distance_single_target(1));
+    /// ```
     pub fn ranged_mass_attack_damage_at_distance_single_target(&self, distance: u8) -> u32 {
         self.get_u32_active_parts_of_type(Part::RangedAttack).fold(0, |acc, p| acc + p.get_ranged_mass_attack_damage_at_distance_single_target(distance))
     }
 
     /// Calculates the amount of hits that a creep can restore to a target creep at range 1.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::HEAL_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let h = PartSpec::new_unboosted_part(Part::Heal);
+    /// let body = vec!(h, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(HEAL_POWER, bodyspec.heal_amount());
+    /// ```
     pub fn heal_amount(&self) -> u32 {
         self.get_u32_active_parts_of_type(Part::Heal).fold(0, |acc, p| acc + p.get_heal_amount())
     }
 
     /// Calculates the amount of hits that a creep can restore to a target creep at range > 1.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::RANGED_HEAL_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let h = PartSpec::new_unboosted_part(Part::Heal);
+    /// let body = vec!(h, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(RANGED_HEAL_POWER, bodyspec.ranged_heal_amount());
+    /// ```
     pub fn ranged_heal_amount(&self) -> u32 {
         self.get_u32_active_parts_of_type(Part::Heal).fold(0, |acc, p| acc + p.get_ranged_heal_amount())
     }
 
     /// Calculates the amount of progress that a creep can add to a controller.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::UPGRADE_CONTROLLER_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(UPGRADE_CONTROLLER_POWER as f32, bodyspec.upgrade_controller_amount());
+    /// ```
     pub fn upgrade_controller_amount(&self) -> f32 {
         self.get_u32_active_parts_of_type(Part::Work).fold(0.0, |acc, p| acc + p.get_upgrade_controller_amount())
     }
 
     /// Calculates the amount of hits that a creep can restore to a structure with repair.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::REPAIR_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(REPAIR_POWER as f32, bodyspec.repair_amount());
+    /// ```
     pub fn repair_amount(&self) -> f32 {
         self.get_u32_active_parts_of_type(Part::Work).fold(0.0, |acc, p| acc + p.get_repair_amount())
     }
 
     /// Calculates the amount of progress that a creep can add to a construction site.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::BUILD_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(BUILD_POWER as f32, bodyspec.build_amount());
+    /// ```
     pub fn build_amount(&self) -> f32 {
         self.get_u32_active_parts_of_type(Part::Work).fold(0.0, |acc, p| acc + p.get_build_amount())
     }
 
     /// Calculates the amount of damage that a creep can deal to a structure with dismantle.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::DISMANTLE_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(DISMANTLE_POWER, bodyspec.dismantle_damage());
+    /// ```
     pub fn dismantle_damage(&self) -> u32 {
         self.get_u32_active_parts_of_type(Part::Work).fold(0, |acc, p| acc + p.get_dismantle_damage())
     }
 
     /// Calculates the amount of energy that a creep can harvest from a Source with harvest.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::HARVEST_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(HARVEST_POWER, bodyspec.harvest_energy_amount());
+    /// ```
     pub fn harvest_energy_amount(&self) -> u32 {
         self.get_u32_active_parts_of_type(Part::Work).fold(0, |acc, p| acc + p.get_harvest_energy_amount())
     }
 
     /// Calculates the amount of minerals that a creep can harvest from a Mineral with harvest.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::HARVEST_MINERAL_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(HARVEST_MINERAL_POWER, bodyspec.harvest_mineral_amount());
+    /// ```
     pub fn harvest_mineral_amount(&self) -> u32 {
         self.get_u32_active_parts_of_type(Part::Work).fold(0, |acc, p| acc + p.get_harvest_mineral_amount())
     }
 
     /// Calculates the amount of resources that a creep can harvest from a Deposit with harvest.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::HARVEST_DEPOSIT_POWER;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(HARVEST_DEPOSIT_POWER, bodyspec.harvest_deposit_amount());
+    /// ```
     pub fn harvest_deposit_amount(&self) -> u32 {
         self.get_u32_active_parts_of_type(Part::Work).fold(0, |acc, p| acc + p.get_harvest_deposit_amount())
     }
 
     /// Calculates the amount of energy needed to spawn a creep with this body.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(Part::Move.cost() + Part::Work.cost(), bodyspec.energy_to_spawn());
+    /// ```
     pub fn energy_to_spawn(&self) -> u32 {
         self.body.iter().fold(0, |acc, p| acc + p.part.cost())
     }
 
     /// Calculates the number of ticks needed to spawn a creep with this body.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::CREEP_SPAWN_TIME;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(CREEP_SPAWN_TIME * 2, bodyspec.ticks_to_spawn());
+    /// ```
     pub fn ticks_to_spawn(&self) -> u32 {
         self.body.iter().fold(0, |acc, _| acc + CREEP_SPAWN_TIME)
     }
@@ -678,19 +947,59 @@ impl BodySpec {
     }
 
     /// Calculates the net exhaustion that results from moving this body onto a plains tile.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::extra::MOVE_COST_PLAIN;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(0, bodyspec.plains_move_net_exhaustion());
+    ///
+    /// let body = vec!(w, w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(MOVE_COST_PLAIN, bodyspec.plains_move_net_exhaustion());
+    /// ```
     pub fn plains_move_net_exhaustion(&self) -> u32 {
         self.tile_move_net_exhaustion(MOVE_COST_PLAIN)
     }
 
     /// Calculates the net exhaustion that results from moving this body onto a swamp tile.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::MOVE_POWER;
+    /// use screeps::constants::extra::MOVE_COST_SWAMP;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(MOVE_COST_SWAMP - MOVE_POWER, bodyspec.swamp_move_net_exhaustion());
+    /// ```
     pub fn swamp_move_net_exhaustion(&self) -> u32 {
         self.tile_move_net_exhaustion(MOVE_COST_SWAMP)
     }
 
     /// Calculates the net exhaustion that results from moving this body onto a road tile.
+    ///
+    /// ```rust
+    /// use screeps::Part;
+    /// use screeps::constants::extra::MOVE_COST_ROAD;
+    /// use screeps_body_utils::body::{BodySpec, PartSpec};
+    /// 
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new_unboosted_part(Part::Work);
+    /// let body = vec!(w, w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(0, bodyspec.road_move_net_exhaustion());
+    /// ```
     pub fn road_move_net_exhaustion(&self) -> u32 {
         self.tile_move_net_exhaustion(MOVE_COST_ROAD)
     }
-
 }
 
