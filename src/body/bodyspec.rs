@@ -23,6 +23,9 @@ use screeps::constants::extra::{
     MOVE_COST_PLAIN,
     MOVE_COST_ROAD,
     MOVE_POWER,
+    RANGED_MASS_ATTACK_POWER_RANGE_1,
+    RANGED_MASS_ATTACK_POWER_RANGE_2,
+    RANGED_MASS_ATTACK_POWER_RANGE_3,
 };
 use screeps::constants::Boost;
 use screeps::objects::output::BodyPart;
@@ -30,9 +33,9 @@ use crate::boost::boost::AbstractBoost;
 
 const fn ranged_mass_attack_power_at_distance(distance: u8) -> u32 {
     match distance {
-        1 => 10,
-        2 => 4,
-        3 => 1,
+        1 => RANGED_MASS_ATTACK_POWER_RANGE_1,
+        2 => RANGED_MASS_ATTACK_POWER_RANGE_2,
+        3 => RANGED_MASS_ATTACK_POWER_RANGE_3,
         _ => 0,
     }
 }
@@ -619,11 +622,11 @@ impl BodySpec {
     /// 
     /// let m = PartSpec::new_unboosted_part(Part::Move);
     /// let w = PartSpec::new_unboosted_part(Part::Work);
-    /// let body = vec!(m, w);
+    /// let body = vec!(w, m);
     /// let bodyspec = BodySpec::new(&body);
     /// let parts = bodyspec.get_parts();
-    /// assert_eq!(Part::Move, parts[0]);
-    /// assert_eq!(Part::Work, parts[1]);
+    /// assert_eq!(Part::Work, parts[0]);
+    /// assert_eq!(Part::Move, parts[1]);
     /// ```
     pub fn get_parts(&self) -> Vec<Part> {
         let mut v = Vec::with_capacity(self.body.len());
@@ -640,9 +643,16 @@ impl BodySpec {
     /// 
     /// let m = PartSpec::new_unboosted_part(Part::Move);
     /// let w = PartSpec::new_unboosted_part(Part::Work);
-    /// let body = vec!(m, w);
+    /// let body = vec!(w, m);
     /// let bodyspec = BodySpec::new(&body);
     /// assert_eq!(CREEP_HITS_PER_PART * 2, bodyspec.hits());
+    ///
+    /// // Create a body with a damaged part
+    /// let m = PartSpec::new_unboosted_part(Part::Move);
+    /// let w = PartSpec::new(Part::Work, 50, None); // 50 hits instead of 100
+    /// let body = vec!(w, m);
+    /// let bodyspec = BodySpec::new(&body);
+    /// assert_eq!(150, bodyspec.hits());
     /// ```
     pub fn hits(&self) -> u32 {
         self.body.iter().fold(0, |acc, p| acc + p.hits)
@@ -659,7 +669,7 @@ impl BodySpec {
     /// // Setup a boosted-Tough body
     /// let m = PartSpec::new_unboosted_part(Part::Move);
     /// let t = PartSpec::new_boosted_part(Part::Tough, AbstractBoost::T3Tough);
-    /// let body = vec!(m, t);
+    /// let body = vec!(t, m);
     /// let bodyspec = BodySpec::new(&body);
     /// assert_eq!(433, bodyspec.effective_hits());
     /// ```
