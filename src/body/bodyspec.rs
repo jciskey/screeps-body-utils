@@ -463,6 +463,16 @@ impl From<BodyPart> for PartSpec {
     }
 }
 
+impl From<Vec<Part>> for BodySpec {
+    fn from(val: Vec<Part>) -> Self {
+        let mut v = Vec::with_capacity(val.len());
+        for p in val {
+            v.push(PartSpec::new(p, CREEP_HITS_PER_PART, None));
+        }
+        Self::raw_new(v)
+    }
+}
+
 
 /*
 - BodySpec implementation -- stores a body specification and calculates based on that
@@ -587,6 +597,13 @@ impl BodySpec {
     pub fn new(body: &[PartSpec]) -> Self {
         Self {
             body: body.iter().copied().collect(),
+        }
+    }
+
+    /// Creates a new, unvalidated BodySpec by taking ownership of a pre-existing PartSpec vector.
+    pub fn raw_new(body_vec: Vec<PartSpec>) -> Self {
+        Self {
+            body: body_vec,
         }
     }
 

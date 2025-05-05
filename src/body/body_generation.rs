@@ -5,6 +5,8 @@ use std::fmt;
 use screeps::Part;
 use screeps::constants::MAX_CREEP_SIZE;
 
+use crate::body::{BodySpec, PartSpec};
+
 /// Dedicated error describing what went wrong when parsing a body spec.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum GenerateBodyError {
@@ -27,13 +29,32 @@ impl fmt::Display for GenerateBodyError {
 impl Error for GenerateBodyError {}
 
 /// Converts a creep body spec string (i.e. "2MC") into a list of Parts that can be used for spawning.
+///
+/// ```rust
+/// use screeps::Part;
+/// use screeps_body_utils::body::body_specification::generate_body_from_string;
+///
+/// let rcl_1_worker = "WM";
+/// let res = generate_body_from_string(rcl_1_worker);
+/// assert!(res.is_ok());
+///
+/// let body = res.unwrap();
+/// assert_eq!(2, body.len());
+/// assert_eq!(Part::Work, body[0]);
+/// assert_eq!(Part::Move, body[1]);
+/// ```
 pub fn generate_body_from_string(body_string: &str) -> Result<Vec<Part>, GenerateBodyError> {
     let mut res = Vec::new();
 
     let part_groups = parse_part_groups(body_string);
 
     for (multiplier_string, parts_string) in part_groups {
-        match multiplier_string.parse::<usize>() {
+        let multiplier_parse_res = if multiplier_string == "" {
+            Ok(1)
+        } else {
+            multiplier_string.parse::<usize>()
+        };
+        match multiplier_parse_res {
             Ok(multiplier) => {
                 let parts_vec: Vec<Part> = parts_string.split("").filter_map(convert_character_to_part).collect();
                 if parts_vec.len() > 0 {
@@ -57,7 +78,40 @@ pub fn generate_body_from_string(body_string: &str) -> Result<Vec<Part>, Generat
     }
 }
 
+/// Converts a creep body spec string (i.e. "2MC") into a BodySpec that can be used for
+/// calculations.
+///
+/// ```rust
+/// use screeps::Part;
+/// use screeps_body_utils::body::body_specification::generate_bodyspec_from_string;
+///
+/// let rcl_1_worker = "WM";
+/// let res = generate_bodyspec_from_string(rcl_1_worker);
+/// assert!(res.is_ok());
+///
+/// let bodyspec = res.unwrap();
+/// let parts = bodyspec.get_parts();
+/// assert_eq!(2, parts.len());
+/// assert_eq!(Part::Work, parts[0]);
+/// assert_eq!(Part::Move, parts[1]);
+/// ```
+pub fn generate_bodyspec_from_string(body_string: &str) -> Result<BodySpec, GenerateBodyError> {
+    let parts_vec = generate_body_from_string(body_string)?;
+    Ok(BodySpec::from(parts_vec))
+}
+
 /// Converts a string slice into a Part.
+///
+/// ```rust
+/// use screeps::Part;
+/// use screeps_body_utils::body::body_specification::convert_character_to_part;
+///
+/// let res = convert_character_to_part("W");
+/// assert!(res.is_some());
+///
+/// let part = res.unwrap();
+/// assert_eq!(Part::Work, part);
+/// ```
 pub fn convert_character_to_part(char_slice: &str) -> Option<Part> {
     match char_slice {
         "M" => Some(Part::Move),
@@ -74,10 +128,16 @@ pub fn convert_character_to_part(char_slice: &str) -> Option<Part> {
 
 /// Splits up a creep body spec string into individual part groups and multipliers.
 ///
-/// Example:
-/// "5T2MC" produces two part groups:
-/// - ("5", "T")
-/// - ("2", "MC")
+/// ```rust
+/// use screeps::Part;
+/// use screeps_body_utils::body::body_specification::parse_part_groups;
+///
+/// let groups_vec = parse_part_groups("5T2MC");
+/// assert_eq!(2, groups_vec.len());
+///
+/// assert_eq!(("5".to_string(), "T".to_string()), groups_vec[0]);
+/// assert_eq!(("2".to_string(), "MC".to_string()), groups_vec[1]);
+/// ```
 pub fn parse_part_groups(body_string: &str) -> Vec<(String, String)> {
     let mut part_groups = Vec::new();
 

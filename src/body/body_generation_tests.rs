@@ -62,6 +62,18 @@ fn one_part_body_string_produces_one_part_body_single_part() {
 }
 
 #[test]
+fn one_part_body_string_produces_one_part_body_single_part_no_prefix() {
+    let s = "M";
+    let result = body_generation::generate_body_from_string(&s);
+
+    assert!(result.is_ok(), "No prefix body generation failed: {:?}", result);
+
+    let body = result.unwrap();
+    assert_eq!(body.len(), 1);
+    assert_eq!(body[0], Part::Move);
+}
+
+#[test]
 fn two_part_body_string_produces_two_part_body_single_part() {
     let s = "2M";
     let result = body_generation::generate_body_from_string(&s);
@@ -88,6 +100,32 @@ fn two_part_body_string_produces_two_part_body_multiple_parts() {
 }
 
 #[test]
+fn two_part_body_string_produces_two_part_body_multiple_parts_no_prefix() {
+    let s = "MC";
+    let result = body_generation::generate_body_from_string(&s);
+
+    assert!(result.is_ok());
+
+    let body = result.unwrap();
+    assert_eq!(body.len(), 2);
+    assert_eq!(body[0], Part::Move);
+    assert_eq!(body[1], Part::Carry);
+}
+
+#[test]
+fn two_part_body_string_produces_two_part_body_multiple_parts_1_prefix() {
+    let s = "M1C";
+    let result = body_generation::generate_body_from_string(&s);
+
+    assert!(result.is_ok());
+
+    let body = result.unwrap();
+    assert_eq!(body.len(), 2);
+    assert_eq!(body[0], Part::Move);
+    assert_eq!(body[1], Part::Carry);
+}
+
+#[test]
 fn count_prefix_applies_to_only_subsequent_parts_group() {
     let s = "2M3C";
     let result = body_generation::generate_body_from_string(&s);
@@ -101,6 +139,21 @@ fn count_prefix_applies_to_only_subsequent_parts_group() {
     assert_eq!(body[2], Part::Carry);
     assert_eq!(body[3], Part::Carry);
     assert_eq!(body[4], Part::Carry);
+}
+
+#[test]
+fn count_prefix_applies_to_only_subsequent_parts_group_no_initial_prefix() {
+    let s = "M3C";
+    let result = body_generation::generate_body_from_string(&s);
+
+    assert!(result.is_ok());
+
+    let body = result.unwrap();
+    assert_eq!(body.len(), 4);
+    assert_eq!(body[0], Part::Move);
+    assert_eq!(body[1], Part::Carry);
+    assert_eq!(body[2], Part::Carry);
+    assert_eq!(body[3], Part::Carry);
 }
 
 #[test]

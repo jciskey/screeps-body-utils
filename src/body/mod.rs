@@ -15,7 +15,9 @@ pub mod body_specification {
     pub use super::body_generation::{
         GenerateBodyError,
         generate_body_from_string,
+        generate_bodyspec_from_string,
         convert_character_to_part,
+        parse_part_groups,
     };
 }
 
