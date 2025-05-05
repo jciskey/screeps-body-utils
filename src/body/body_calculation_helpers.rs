@@ -1,15 +1,13 @@
+use screeps::constants::extra::{
+    MOVE_COST_PLAIN,
+    MOVE_COST_ROAD,
+};
+use screeps::Part;
 use crate::helpers::functions::{const_ceil_f32, const_floor_f32};
 use crate::boost::boost::{AbstractBoost, BoostCategory};
 use super::body_calculations::{BoostSelectionConfig, BoostTierChoice};
 use super::PartSpec;
 
-/*
-- Body calculations
-  - parts to move off road without fatigue
-    - also takes a PartSpec slice to calculate off of
-  - parts to move on road without fatigue
-    - also takes a PartSpec slice to calculate off of
-*/
 
 /// Errors that can occur when validating the input to construct a PartsSummary.
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -747,18 +745,117 @@ pub const fn parts_to_absorb_damage(amount: f32, boost_config: &BoostSelectionCo
     parts_to_action_inner_wrapper_f32(BoostCategory::Tough, amount, boost_config)
 }
 
+/// Calculates the Move part configuration necessary to allow the provided body to move "off-road"
+/// without generating fatigue every tick.
+///
+/// Off-road in this context means on plain tiles that do not have a road.
+///
+/// If the boost configuration mandates a specific tier of boost, the number of body parts will be
+/// minimized.
+///
+/// If the boost configuration allows for dynamic tier selection, it will maximize the number of
+/// parts unless partial boosts is false, in which case it will maximize the boost tier of each
+/// part before adding an additional part.
+///
+/// The returned number of body parts will total to 50 or less.
+pub const fn parts_to_move_offroad(body: &[Part], boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
+    let mut non_move_parts_count = 0;
+    let mut i = 0;
+    while i < body.len() {
+        match body[i] {
+            Part::Move => {}, // Do nothing
+            _ => non_move_parts_count += 1,
+        };
+        i += 1;
+    }
+    parts_to_move_offroad_by_parts_count(non_move_parts_count, boost_config)
+}
+
+/// Calculates the Move part configuration necessary to allow a particular number of non-Move parts to move "off-road"
+/// without generating fatigue every tick.
+///
+/// Off-road in this context means on plain tiles that do not have a road.
+///
+/// This method is useful for when you have a count of non-move parts, and don't need/want to
+/// provide a slice of Parts.
+///
+/// If the boost configuration mandates a specific tier of boost, the number of body parts will be
+/// minimized.
+///
+/// If the boost configuration allows for dynamic tier selection, it will maximize the number of
+/// parts unless partial boosts is false, in which case it will maximize the boost tier of each
+/// part before adding an additional part.
+///
+/// The returned number of body parts will total to 50 or less.
+pub const fn parts_to_move_offroad_by_parts_count(num_non_move_parts: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
+    let fatigue_generated = num_non_move_parts * MOVE_COST_PLAIN;
+    parts_to_reduce_fatigue(fatigue_generated, boost_config)
+}
+
+/// Calculates the Move part configuration necessary to allow the provided body to move on-road
+/// without generating fatigue every tick.
+///
+/// If the boost configuration mandates a specific tier of boost, the number of body parts will be
+/// minimized.
+///
+/// If the boost configuration allows for dynamic tier selection, it will maximize the number of
+/// parts unless partial boosts is false, in which case it will maximize the boost tier of each
+/// part before adding an additional part.
+///
+/// The returned number of body parts will total to 50 or less.
+pub const fn parts_to_move_onroad(body: &[Part], boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
+    let mut non_move_parts_count = 0;
+    let mut i = 0;
+    while i < body.len() {
+        match body[i] {
+            Part::Move => {}, // Do nothing
+            _ => non_move_parts_count += 1,
+        };
+        i += 1;
+    }
+    parts_to_move_onroad_by_parts_count(non_move_parts_count, boost_config)
+}
+
+/// Calculates the Move part configuration necessary to allow a particular number of non-Move parts to move on-road
+/// without generating fatigue every tick.
+///
+/// This method is useful for when you have a count of non-move parts, and don't need/want to
+/// provide a slice of Parts.
+///
+/// If the boost configuration mandates a specific tier of boost, the number of body parts will be
+/// minimized.
+///
+/// If the boost configuration allows for dynamic tier selection, it will maximize the number of
+/// parts unless partial boosts is false, in which case it will maximize the boost tier of each
+/// part before adding an additional part.
+///
+/// The returned number of body parts will total to 50 or less.
+pub const fn parts_to_move_onroad_by_parts_count(num_non_move_parts: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
+    let fatigue_generated = num_non_move_parts * MOVE_COST_ROAD;
+    parts_to_reduce_fatigue(fatigue_generated, boost_config)
+}
+/// Internal helper method for generically calculating parts needed for a boost category and a
+/// target amount that operate in u32 space.
 const fn parts_to_action_inner_wrapper_u32(category: BoostCategory, amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     let [unboosted_power, t1_power, t2_power, t3_power] = u32_parts_power_for_boost_category(&category).unwrap();
     let params = IterativeCalculationParams::new_u32(amount, unboosted_power, t1_power, t2_power, t3_power);
     generic_get_parts_needed(params, boost_config)
 }
 
+/// Internal helper method for generically calculating parts needed for a boost category and a
+/// target amount that operate in f32 space.
 const fn parts_to_action_inner_wrapper_f32(category: BoostCategory, amount: f32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     let [unboosted_power, t1_power, t2_power, t3_power] = f32_parts_power_for_boost_category(&category).unwrap();
     let params = IterativeCalculationParams::new_f32(amount, unboosted_power, t1_power, t2_power, t3_power);
     generic_get_parts_needed(params, boost_config)
 }
 
+/// Internal method for generically calculating the parts needed to meet or exceed a particular
+/// amount.
+///
+/// Operates generically across both u32 and f32 by using the IterativeCalculationParams struct
+/// to abstract away the type differences, since the overall math and algorithm are the same
+/// between both types.
 const fn generic_get_parts_needed(params: IterativeCalculationParams, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     let (num_parts, num_t1_boosts, num_t2_boosts, num_t3_boosts) = match boost_config.boost_tier_choice {
         // If the boost config mandates a certain tier of boost, we can do direct calculations to
