@@ -339,6 +339,98 @@ pub const T3_BOOSTS: [AbstractBoost; 10] = [
     AbstractBoost::T3Tough,
 ];
 
+/// The multiplier for a [T1Attack](AbstractBoost::T1Attack) boost.
+pub const T1_ATTACK_MULTIPLIER: u32 = 2;
+
+/// The multiplier for a [T2Attack](AbstractBoost::T2Attack) boost.
+pub const T2_ATTACK_MULTIPLIER: u32 = 3;
+
+/// The multiplier for a [T3Attack](AbstractBoost::T3Attack) boost.
+pub const T3_ATTACK_MULTIPLIER: u32 = 4;
+
+/// The multiplier for a [T1Harvest](AbstractBoost::T1Harvest) boost.
+pub const T1_HARVEST_MULTIPLIER: u32 = 3;
+
+/// The multiplier for a [T2Harvest](AbstractBoost::T2Harvest) boost.
+pub const T2_HARVEST_MULTIPLIER: u32 = 5;
+
+/// The multiplier for a [T3Harvest](AbstractBoost::T3Harvest) boost.
+pub const T3_HARVEST_MULTIPLIER: u32 = 7;
+
+/// The multiplier for a [T1Carry](AbstractBoost::T1Carry) boost.
+pub const T1_CARRY_MULTIPLIER: u32 = 2;
+
+/// The multiplier for a [T2Carry](AbstractBoost::T2Carry) boost.
+pub const T2_CARRY_MULTIPLIER: u32 = 3;
+
+/// The multiplier for a [T3Carry](AbstractBoost::T3Carry) boost.
+pub const T3_CARRY_MULTIPLIER: u32 = 4;
+
+/// The multiplier for a [T1RangedAttack](AbstractBoost::T1RangedAttack) boost.
+pub const T1_RANGED_ATTACK_MULTIPLIER: u32 = 2;
+
+/// The multiplier for a [T2RangedAttack](AbstractBoost::T2RangedAttack) boost.
+pub const T2_RANGED_ATTACK_MULTIPLIER: u32 = 3;
+
+/// The multiplier for a [T3RangedAttack](AbstractBoost::T3RangedAttack) boost.
+pub const T3_RANGED_ATTACK_MULTIPLIER: u32 = 4;
+
+/// The multiplier for a [T1BuildRepair](AbstractBoost::T1BuildRepair) boost.
+pub const T1_BUILD_REPAIR_MULTIPLIER: f32 = 1.5;
+
+/// The multiplier for a [T2BuildRepair](AbstractBoost::T2BuildRepair) boost.
+pub const T2_BUILD_REPAIR_MULTIPLIER: f32 = 1.8;
+
+/// The multiplier for a [T3BuildRepair](AbstractBoost::T3BuildRepair) boost.
+pub const T3_BUILD_REPAIR_MULTIPLIER: f32 = 2.0;
+
+/// The multiplier for a [T1Heal](AbstractBoost::T1Heal) boost.
+pub const T1_HEAL_MULTIPLIER: u32 = 2;
+
+/// The multiplier for a [T2Heal](AbstractBoost::T2Heal) boost.
+pub const T2_HEAL_MULTIPLIER: u32 = 3;
+
+/// The multiplier for a [T3Heal](AbstractBoost::T3Heal) boost.
+pub const T3_HEAL_MULTIPLIER: u32 = 4;
+
+/// The multiplier for a [T1Dismantle](AbstractBoost::T1Dismantle) boost.
+pub const T1_DISMANTLE_MULTIPLIER: u32 = 2;
+
+/// The multiplier for a [T2Dismantle](AbstractBoost::T2Dismantle) boost.
+pub const T2_DISMANTLE_MULTIPLIER: u32 = 3;
+
+/// The multiplier for a [T3Dismantle](AbstractBoost::T3Dismantle) boost.
+pub const T3_DISMANTLE_MULTIPLIER: u32 = 4;
+
+/// The multiplier for a [T1Move](AbstractBoost::T1Move) boost.
+pub const T1_MOVE_MULTIPLIER: u32 = 2;
+
+/// The multiplier for a [T2Move](AbstractBoost::T2Move) boost.
+pub const T2_MOVE_MULTIPLIER: u32 = 3;
+
+/// The multiplier for a [T3Move](AbstractBoost::T3Move) boost.
+pub const T3_MOVE_MULTIPLIER: u32 = 4;
+
+/// The multiplier for a [T1UpgradeController](AbstractBoost::T1UpgradeController) boost.
+pub const T1_UPGRADE_CONTROLLER_MULTIPLIER: f32 = 1.5;
+
+/// The multiplier for a [T2UpgradeController](AbstractBoost::T2UpgradeController) boost.
+pub const T2_UPGRADE_CONTROLLER_MULTIPLIER: f32 = 1.8;
+
+/// The multiplier for a [T3UpgradeController](AbstractBoost::T3UpgradeController) boost.
+pub const T3_UPGRADE_CONTROLLER_MULTIPLIER: f32 = 2.0;
+
+/// The multiplier for a [T1Tough](AbstractBoost::T1Tough) boost.
+pub const T1_TOUGH_MULTIPLIER: f32 = 0.7;
+
+/// The multiplier for a [T2Tough](AbstractBoost::T2Tough) boost.
+pub const T2_TOUGH_MULTIPLIER: f32 = 0.5;
+
+/// The multiplier for a [T3Tough](AbstractBoost::T3Tough) boost.
+pub const T3_TOUGH_MULTIPLIER: f32 = 0.3;
+
+
+
 /// Abstract representation of attributes that can be boosted.
 #[derive(Debug, PartialEq, Hash, Copy, Clone)]
 pub enum BoostCategory {
@@ -698,36 +790,36 @@ impl AbstractBoost {
     pub const fn const_to_boost(value: &AbstractBoost) -> Boost {
         use AbstractBoost::*;
         match value {
-            T1Attack => Boost::Attack(2),
-            T2Attack => Boost::Attack(3),
-            T3Attack => Boost::Attack(4),
-            T1Harvest => Boost::Harvest(3),
-            T2Harvest => Boost::Harvest(5),
-            T3Harvest => Boost::Harvest(7),
-            T1Carry => Boost::Carry(2),
-            T2Carry => Boost::Carry(3),
-            T3Carry => Boost::Carry(4),
-            T1RangedAttack => Boost::RangedAttack(2),
-            T2RangedAttack => Boost::RangedAttack(3),
-            T3RangedAttack => Boost::RangedAttack(4),
-            T1BuildRepair => Boost::BuildAndRepair(1.5),
-            T2BuildRepair => Boost::BuildAndRepair(1.8),
-            T3BuildRepair => Boost::BuildAndRepair(2.0),
-            T1Heal => Boost::Heal(2),
-            T2Heal => Boost::Heal(3),
-            T3Heal => Boost::Heal(4),
-            T1Dismantle => Boost::Dismantle(2),
-            T2Dismantle => Boost::Dismantle(3),
-            T3Dismantle => Boost::Dismantle(4),
-            T1Move => Boost::Move(2),
-            T2Move => Boost::Move(3),
-            T3Move => Boost::Move(4),
-            T1UpgradeController => Boost::UpgradeController(1.5),
-            T2UpgradeController => Boost::UpgradeController(1.8),
-            T3UpgradeController => Boost::UpgradeController(2.0),
-            T1Tough => Boost::Tough(0.7),
-            T2Tough => Boost::Tough(0.5),
-            T3Tough => Boost::Tough(0.3),
+            T1Attack => Boost::Attack(T1_ATTACK_MULTIPLIER),
+            T2Attack => Boost::Attack(T2_ATTACK_MULTIPLIER),
+            T3Attack => Boost::Attack(T3_ATTACK_MULTIPLIER),
+            T1Harvest => Boost::Harvest(T1_HARVEST_MULTIPLIER),
+            T2Harvest => Boost::Harvest(T2_HARVEST_MULTIPLIER),
+            T3Harvest => Boost::Harvest(T3_HARVEST_MULTIPLIER),
+            T1Carry => Boost::Carry(T1_CARRY_MULTIPLIER),
+            T2Carry => Boost::Carry(T2_CARRY_MULTIPLIER),
+            T3Carry => Boost::Carry(T3_CARRY_MULTIPLIER),
+            T1RangedAttack => Boost::RangedAttack(T1_RANGED_ATTACK_MULTIPLIER),
+            T2RangedAttack => Boost::RangedAttack(T2_RANGED_ATTACK_MULTIPLIER),
+            T3RangedAttack => Boost::RangedAttack(T3_RANGED_ATTACK_MULTIPLIER),
+            T1BuildRepair => Boost::BuildAndRepair(T1_BUILD_REPAIR_MULTIPLIER),
+            T2BuildRepair => Boost::BuildAndRepair(T2_BUILD_REPAIR_MULTIPLIER),
+            T3BuildRepair => Boost::BuildAndRepair(T3_BUILD_REPAIR_MULTIPLIER),
+            T1Heal => Boost::Heal(T1_HEAL_MULTIPLIER),
+            T2Heal => Boost::Heal(T2_HEAL_MULTIPLIER),
+            T3Heal => Boost::Heal(T3_HEAL_MULTIPLIER),
+            T1Dismantle => Boost::Dismantle(T1_DISMANTLE_MULTIPLIER),
+            T2Dismantle => Boost::Dismantle(T2_DISMANTLE_MULTIPLIER),
+            T3Dismantle => Boost::Dismantle(T3_DISMANTLE_MULTIPLIER),
+            T1Move => Boost::Move(T1_MOVE_MULTIPLIER),
+            T2Move => Boost::Move(T2_MOVE_MULTIPLIER),
+            T3Move => Boost::Move(T3_MOVE_MULTIPLIER),
+            T1UpgradeController => Boost::UpgradeController(T1_UPGRADE_CONTROLLER_MULTIPLIER),
+            T2UpgradeController => Boost::UpgradeController(T2_UPGRADE_CONTROLLER_MULTIPLIER),
+            T3UpgradeController => Boost::UpgradeController(T3_UPGRADE_CONTROLLER_MULTIPLIER),
+            T1Tough => Boost::Tough(T1_TOUGH_MULTIPLIER),
+            T2Tough => Boost::Tough(T2_TOUGH_MULTIPLIER),
+            T3Tough => Boost::Tough(T3_TOUGH_MULTIPLIER),
         }
     }
 
@@ -787,30 +879,30 @@ impl AbstractBoost {
     pub const fn get_u32_multiplier(value: &AbstractBoost) -> Option<u32> {
         use AbstractBoost::*;
         match value {
-            T1Attack => Some(2),
-            T2Attack => Some(3),
-            T3Attack => Some(4),
-            T1Harvest => Some(3),
-            T2Harvest => Some(5),
-            T3Harvest => Some(7),
-            T1Carry => Some(2),
-            T2Carry => Some(3),
-            T3Carry => Some(4),
-            T1RangedAttack => Some(2),
-            T2RangedAttack => Some(3),
-            T3RangedAttack => Some(4),
+            T1Attack => Some(T1_ATTACK_MULTIPLIER),
+            T2Attack => Some(T2_ATTACK_MULTIPLIER),
+            T3Attack => Some(T3_ATTACK_MULTIPLIER),
+            T1Harvest => Some(T1_HARVEST_MULTIPLIER),
+            T2Harvest => Some(T2_HARVEST_MULTIPLIER),
+            T3Harvest => Some(T3_HARVEST_MULTIPLIER),
+            T1Carry => Some(T1_CARRY_MULTIPLIER),
+            T2Carry => Some(T2_CARRY_MULTIPLIER),
+            T3Carry => Some(T3_CARRY_MULTIPLIER),
+            T1RangedAttack => Some(T1_RANGED_ATTACK_MULTIPLIER),
+            T2RangedAttack => Some(T2_RANGED_ATTACK_MULTIPLIER),
+            T3RangedAttack => Some(T3_RANGED_ATTACK_MULTIPLIER),
             T1BuildRepair => None,
             T2BuildRepair => None,
             T3BuildRepair => None,
-            T1Heal => Some(2),
-            T2Heal => Some(3),
-            T3Heal => Some(4),
-            T1Dismantle => Some(2),
-            T2Dismantle => Some(3),
-            T3Dismantle => Some(4),
-            T1Move => Some(2),
-            T2Move => Some(3),
-            T3Move => Some(4),
+            T1Heal => Some(T1_HEAL_MULTIPLIER),
+            T2Heal => Some(T2_HEAL_MULTIPLIER),
+            T3Heal => Some(T3_HEAL_MULTIPLIER),
+            T1Dismantle => Some(T1_DISMANTLE_MULTIPLIER),
+            T2Dismantle => Some(T2_DISMANTLE_MULTIPLIER),
+            T3Dismantle => Some(T3_DISMANTLE_MULTIPLIER),
+            T1Move => Some(T1_MOVE_MULTIPLIER),
+            T2Move => Some(T2_MOVE_MULTIPLIER),
+            T3Move => Some(T3_MOVE_MULTIPLIER),
             T1UpgradeController => None,
             T2UpgradeController => None,
             T3UpgradeController => None,
@@ -838,9 +930,9 @@ impl AbstractBoost {
             T1RangedAttack => None,
             T2RangedAttack => None,
             T3RangedAttack => None,
-            T1BuildRepair => Some(1.5),
-            T2BuildRepair => Some(1.8),
-            T3BuildRepair => Some(2.0),
+            T1BuildRepair => Some(T1_BUILD_REPAIR_MULTIPLIER),
+            T2BuildRepair => Some(T2_BUILD_REPAIR_MULTIPLIER),
+            T3BuildRepair => Some(T3_BUILD_REPAIR_MULTIPLIER),
             T1Heal => None,
             T2Heal => None,
             T3Heal => None,
@@ -850,12 +942,12 @@ impl AbstractBoost {
             T1Move => None,
             T2Move => None,
             T3Move => None,
-            T1UpgradeController => Some(1.5),
-            T2UpgradeController => Some(1.8),
-            T3UpgradeController => Some(2.0),
-            T1Tough => Some(0.7),
-            T2Tough => Some(0.5),
-            T3Tough => Some(0.3),
+            T1UpgradeController => Some(T1_UPGRADE_CONTROLLER_MULTIPLIER),
+            T2UpgradeController => Some(T2_UPGRADE_CONTROLLER_MULTIPLIER),
+            T3UpgradeController => Some(T3_UPGRADE_CONTROLLER_MULTIPLIER),
+            T1Tough => Some(T1_TOUGH_MULTIPLIER),
+            T2Tough => Some(T2_TOUGH_MULTIPLIER),
+            T3Tough => Some(T3_TOUGH_MULTIPLIER),
         }
     }
 }
@@ -892,81 +984,81 @@ impl TryFrom<Boost> for AbstractBoost {
         match value {
             Boost::Attack(val) => {
                 match val {
-                    2 => Ok(T1Attack),
-                    3 => Ok(T2Attack),
-                    4 => Ok(T3Attack),
+                    T1_ATTACK_MULTIPLIER => Ok(T1Attack),
+                    T2_ATTACK_MULTIPLIER => Ok(T2Attack),
+                    T3_ATTACK_MULTIPLIER => Ok(T3Attack),
                     _ => Err("invalid boost value"),
                 }
             },
             Boost::Harvest(val) => {
                 match val {
-                    3 => Ok(T1Harvest),
-                    5 => Ok(T2Harvest),
-                    7 => Ok(T3Harvest),
+                    T1_HARVEST_MULTIPLIER => Ok(T1Harvest),
+                    T2_HARVEST_MULTIPLIER => Ok(T2Harvest),
+                    T3_HARVEST_MULTIPLIER => Ok(T3Harvest),
                     _ => Err("invalid boost value"),
                 }
             },
             Boost::Carry(val) => {
                 match val {
-                    2 => Ok(T1Carry),
-                    3 => Ok(T2Carry),
-                    4 => Ok(T3Carry),
+                    T1_CARRY_MULTIPLIER => Ok(T1Carry),
+                    T2_CARRY_MULTIPLIER => Ok(T2Carry),
+                    T3_CARRY_MULTIPLIER => Ok(T3Carry),
                     _ => Err("invalid boost value"),
                 }
             },
             Boost::RangedAttack(val) => {
                 match val {
-                    2 => Ok(T1RangedAttack),
-                    3 => Ok(T2RangedAttack),
-                    4 => Ok(T3RangedAttack),
+                    T1_RANGED_ATTACK_MULTIPLIER => Ok(T1RangedAttack),
+                    T2_RANGED_ATTACK_MULTIPLIER => Ok(T2RangedAttack),
+                    T3_RANGED_ATTACK_MULTIPLIER => Ok(T3RangedAttack),
                     _ => Err("invalid boost value"),
                 }
             },
             Boost::BuildAndRepair(val) => {
                 match val {
-                    1.5 => Ok(T1BuildRepair),
-                    1.8 => Ok(T2BuildRepair),
-                    2.0 => Ok(T3BuildRepair),
+                    T1_BUILD_REPAIR_MULTIPLIER => Ok(T1BuildRepair),
+                    T2_BUILD_REPAIR_MULTIPLIER => Ok(T2BuildRepair),
+                    T3_BUILD_REPAIR_MULTIPLIER => Ok(T3BuildRepair),
                     _ => Err("invalid boost value"),
                 }
             },
             Boost::Heal(val) => {
                 match val {
-                    2 => Ok(T1Heal),
-                    3 => Ok(T2Heal),
-                    4 => Ok(T3Heal),
+                    T1_HEAL_MULTIPLIER => Ok(T1Heal),
+                    T2_HEAL_MULTIPLIER => Ok(T2Heal),
+                    T3_HEAL_MULTIPLIER => Ok(T3Heal),
                     _ => Err("invalid boost value"),
                 }
             },
             Boost::Dismantle(val) => {
                 match val {
-                    2 => Ok(T1Dismantle),
-                    3 => Ok(T2Dismantle),
-                    4 => Ok(T3Dismantle),
+                    T1_DISMANTLE_MULTIPLIER => Ok(T1Dismantle),
+                    T2_DISMANTLE_MULTIPLIER => Ok(T2Dismantle),
+                    T3_DISMANTLE_MULTIPLIER => Ok(T3Dismantle),
                     _ => Err("invalid boost value"),
                 }
             },
             Boost::Move(val) => {
                 match val {
-                    2 => Ok(T1Move),
-                    3 => Ok(T2Move),
-                    4 => Ok(T3Move),
+                    T1_MOVE_MULTIPLIER => Ok(T1Move),
+                    T2_MOVE_MULTIPLIER => Ok(T2Move),
+                    T3_MOVE_MULTIPLIER => Ok(T3Move),
                     _ => Err("invalid boost value"),
                 }
             },
             Boost::UpgradeController(val) => {
                 match val {
-                    1.5 => Ok(T1UpgradeController),
-                    1.8 => Ok(T2UpgradeController),
-                    2.0 => Ok(T3UpgradeController),
+                    T1_UPGRADE_CONTROLLER_MULTIPLIER => Ok(T1UpgradeController),
+                    T2_UPGRADE_CONTROLLER_MULTIPLIER => Ok(T2UpgradeController),
+                    T3_UPGRADE_CONTROLLER_MULTIPLIER => Ok(T3UpgradeController),
                     _ => Err("invalid boost value"),
                 }
             },
             Boost::Tough(val) => {
                 match val {
-                    0.7 => Ok(T1Tough),
-                    0.5 => Ok(T2Tough),
-                    0.3 => Ok(T3Tough),
+                    T1_TOUGH_MULTIPLIER => Ok(T1Tough),
+                    T2_TOUGH_MULTIPLIER => Ok(T2Tough),
+                    T3_TOUGH_MULTIPLIER => Ok(T3Tough),
                     _ => Err("invalid boost value"),
                 }
             },
