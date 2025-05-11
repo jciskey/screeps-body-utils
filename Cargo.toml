@@ -2,7 +2,7 @@
 name = "screeps-body-utils"
 version = "0.1.0"
 edition = "2024"
-authors = ["Shane Madden"]
+authors = ["Joe Ciskey"]
 documentation = "https://docs.rs/screeps-body-utils/"
 include = [
     "Cargo.toml",
@@ -14,7 +14,7 @@ include = [
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/jciskey/screeps-body-utils/"
-description = "Additional utility functionality for Creep bodies for Screeps: World not included in screeps-game-api"
+description = "Adds calculation functionality related to creep bodies in Screeps: World"
 
 [lib]
 name = "screeps_body_utils"
