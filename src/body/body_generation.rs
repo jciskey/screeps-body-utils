@@ -28,12 +28,18 @@ impl fmt::Display for GenerateBodyError {
 
 impl Error for GenerateBodyError {}
 
-/// Converts a creep body spec string (i.e. "2MC") into a list of Parts that can be used for spawning.
+/// Converts a creep body spec string (i.e. "2MC") into a Vec of Parts that can be used for spawning.
+///
+/// Valid characters are specified in [convert_character_to_part].
+///
+/// Characters can be prefixed with a number to indicate how many of that part you want. Consecutive
+/// runs of characters without digits separating them will be grouped together.
 ///
 /// ```rust
 /// use screeps::Part;
 /// use screeps_body_utils::body::body_specification::generate_body_from_string;
-///
+/// 
+/// // Basic usage
 /// let rcl_1_worker = "WM";
 /// let res = generate_body_from_string(rcl_1_worker);
 /// assert!(res.is_ok());
@@ -42,6 +48,72 @@ impl Error for GenerateBodyError {}
 /// assert_eq!(2, body.len());
 /// assert_eq!(Part::Work, body[0]);
 /// assert_eq!(Part::Move, body[1]);
+///
+/// // No numeric prefix presumes 1 part is desired
+/// let scout = "M";
+/// let body = generate_body_from_string(scout).unwrap();
+/// assert_eq!(1, body.len());
+/// assert_eq!(Part::Move, body[0]);
+///
+/// // Basic numeric prefix
+/// let six_work = "6W";
+/// let body = generate_body_from_string(six_work).unwrap();
+/// assert_eq!(6, body.len());
+/// for p in body {
+///   assert_eq!(Part::Work, p);
+/// }
+///
+/// // Multiple digits are also acceptable
+/// let twenty_move = "20M";
+/// let body = generate_body_from_string(twenty_move).unwrap();
+/// assert_eq!(20, body.len());
+/// for p in body {
+///   assert_eq!(Part::Move, p);
+/// }
+///
+/// // Numeric prefixes will apply to the entire part group, and will cycle through the parts in
+/// // the group in-order.
+/// let hauler = "10CM";
+/// let body = generate_body_from_string(hauler).unwrap();
+/// assert_eq!(20, body.len());
+/// for i in (0..body.len()).step_by(2) {
+///   assert_eq!(Part::Carry, body[i]);
+///   assert_eq!(Part::Move, body[i+1]);
+/// }
+///
+/// // Multiple groups with numeric prefixes are acceptable
+/// let leeway_dedicated_harvester = "6W3M";
+/// let body = generate_body_from_string(leeway_dedicated_harvester).unwrap();
+/// assert_eq!(9, body.len());
+/// for i in 0..6 {
+///   assert_eq!(Part::Work, body[i]);
+/// }
+/// for i in 6..9 {
+///   assert_eq!(Part::Move, body[i]);
+/// }
+///
+/// // Parts can be repeated across multiple groups
+/// let blinky = "3R3H6M1RHM";
+/// let body = generate_body_from_string(blinky).unwrap();
+/// assert_eq!(15, body.len());
+/// for p in &body[0..3] {
+///   assert_eq!(Part::RangedAttack, *p);
+/// }
+/// for p in &body[3..6] {
+///   assert_eq!(Part::Heal, *p);
+/// }
+/// for p in &body[6..12] {
+///   assert_eq!(Part::Move, *p);
+/// }
+/// for p in &body[12..13] {
+///   assert_eq!(Part::RangedAttack, *p);
+/// }
+/// for p in &body[13..14] {
+///   assert_eq!(Part::Heal, *p);
+/// }
+/// for p in &body[14..15] {
+///   assert_eq!(Part::Move, *p);
+/// }
 /// ```
 pub fn generate_body_from_string(body_string: &str) -> Result<Vec<Part>, GenerateBodyError> {
     let mut res = Vec::new();
@@ -78,7 +150,7 @@ pub fn generate_body_from_string(body_string: &str) -> Result<Vec<Part>, Generat
     }
 }
 
-/// Converts a creep body spec string (i.e. "2MC") into a BodySpec that can be used for
+/// Converts a creep body spec string (i.e. "2MC") into a [BodySpec] that can be used for
 /// calculations.
 ///
 /// ```rust
@@ -95,6 +167,8 @@ pub fn generate_body_from_string(body_string: &str) -> Result<Vec<Part>, Generat
 /// assert_eq!(Part::Work, parts[0]);
 /// assert_eq!(Part::Move, parts[1]);
 /// ```
+///
+/// For more details about valid body spec strings, see the documentation for [generate_body_from_string].
 pub fn generate_bodyspec_from_string(body_string: &str) -> Result<BodySpec, GenerateBodyError> {
     let parts_vec = generate_body_from_string(body_string)?;
     Ok(BodySpec::from(parts_vec))
@@ -112,6 +186,20 @@ pub fn generate_bodyspec_from_string(body_string: &str) -> Result<BodySpec, Gene
 /// let part = res.unwrap();
 /// assert_eq!(Part::Work, part);
 /// ```
+///
+/// The conversion is as follows:
+/// | Character | Part |
+/// | --------- | ---- |
+/// | M | Part::Move |
+/// | W | Part::Work |
+/// | C | Part::Carry |
+/// | A | Part::Attack |
+/// | R | Part::RangedAttack |
+/// | T | Part::Tough |
+/// | H | Part::Heal |
+/// | L | Part::Claim |
+///
+/// Any unrecognized character will return None.
 pub fn convert_character_to_part(char_slice: &str) -> Option<Part> {
     match char_slice {
         "M" => Some(Part::Move),
