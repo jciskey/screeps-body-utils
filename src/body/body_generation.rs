@@ -190,14 +190,14 @@ pub fn generate_bodyspec_from_string(body_string: &str) -> Result<BodySpec, Gene
 /// The conversion is as follows:
 /// | Character | Part |
 /// | --------- | ---- |
-/// | M | Part::Move |
-/// | W | Part::Work |
-/// | C | Part::Carry |
-/// | A | Part::Attack |
-/// | R | Part::RangedAttack |
-/// | T | Part::Tough |
-/// | H | Part::Heal |
-/// | L | Part::Claim |
+/// | M | [Move](Part::Move) |
+/// | W | [Work](Part::Work) |
+/// | C | [Carry](Part::Carry) |
+/// | A | [Attack](Part::Attack) |
+/// | R | [RangedAttack](Part::RangedAttack) |
+/// | T | [Tough](Part::Tough) |
+/// | H | [Heal](Part::Heal) |
+/// | L | [Claim](Part::Claim) |
 ///
 /// Any unrecognized character will return None.
 pub fn convert_character_to_part(char_slice: &str) -> Option<Part> {

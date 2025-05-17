@@ -87,6 +87,20 @@ pub const fn const_floor_f32(a: f32) -> f32 {
     SoftF32::from_f32(a).floor().to_f32()
 }
 
+/// Returns whether a given resource is a compound that can be used in a lab for reactions.
+///
+/// Put another way, lab compounds are resources that were produced by a lab reaction.
+///
+/// Minerals are not lab compounds, as they are not compounds.
+///
+/// ```rust
+/// use screeps::ResourceType;
+/// use screeps_body_utils::helpers::functions::resource_is_lab_compound;
+/// 
+/// assert!(resource_is_lab_compound(&ResourceType::Hydroxide));
+/// assert!(!resource_is_lab_compound(&ResourceType::Zynthium));
+/// assert!(!resource_is_lab_compound(&ResourceType::Energy));
+/// ```
 pub const fn resource_is_lab_compound(resource: &ResourceType) -> bool {
     use ResourceType::*;
     match resource {

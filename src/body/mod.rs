@@ -28,6 +28,20 @@ pub use bodyspec::*;
 ///   assert_eq!(Part::Move, body[i]);
 /// }
 /// ```
+///
+/// The grammar used to convert strings to parts is:
+///
+/// | Character | Part |
+/// | --------- | ---- |
+/// | M | [Move](screeps::Part::Move) |
+/// | W | [Work](screeps::Part::Work) |
+/// | C | [Carry](screeps::Part::Carry) |
+/// | A | [Attack](screeps::Part::Attack) |
+/// | R | [RangedAttack](screeps::Part::RangedAttack) |
+/// | T | [Tough](screeps::Part::Tough) |
+/// | H | [Heal](screeps::Part::Heal) |
+/// | L | [Claim](screeps::Part::Claim) |
+///
 pub mod body_specification {
     pub use super::body_generation::{
         GenerateBodyError,
