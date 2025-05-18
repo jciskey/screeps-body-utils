@@ -86,6 +86,19 @@ impl PartsSummary {
     pub const fn num_t3_parts(&self) -> usize {
         self.num_t3_boosts
     }
+
+    /// Returns an array of the parts totals
+    ///
+    /// Output array is: [total_parts, unboosted_parts, t1_parts, t2_parts, t3_parts]
+    pub const fn part_totals(&self) -> [usize; 5] {
+        [
+            self.num_parts(),
+            self.num_unboosted_parts(),
+            self.num_t1_parts(),
+            self.num_t2_parts(),
+            self.num_t3_parts(),
+        ]
+    }
 }
 
 /// Errors resulting from part amount calculations.
@@ -539,6 +552,44 @@ const fn f32_parts_power_for_boost_category(category: &BoostCategory) -> Option<
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::{Part, HARVEST_POWER, SOURCE_ENERGY_CAPACITY, ENERGY_REGEN_TIME};
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, PartsSummary, parts_to_harvest_energy};
+/// 
+/// // How much harvest power do you need to completely harvest a Source before it regenerates?
+/// const NEEDED_POWER_PER_TICK: u32 = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK as usize / HARVEST_POWER as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_harvest_energy(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+///
+/// // Because we've been working purely with const expressions, everything is done at compile
+/// // time, which also means we can use these values for constructing stack-based Part arrays
+/// const work_parts_arr: [Part; total_parts_needed] = [Part::Work; total_parts_needed];
+///
+/// use std::mem::size_of;
+/// assert_eq!(size_of::<Part>() * total_parts_needed, size_of::<[Part; total_parts_needed]>());
+/// ```
 pub const fn parts_to_harvest_energy(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::HarvestEnergy, amount, boost_config)
 }
@@ -553,6 +604,38 @@ pub const fn parts_to_harvest_energy(amount: u32, boost_config: &BoostSelectionC
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::{HARVEST_MINERAL_POWER, CREEP_LIFE_TIME};
+/// use screeps::constants::minerals::Density;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_harvest_mineral};
+/// 
+/// // How much harvest power do you need to completely harvest a low density Mineral in a single creep lifetime?
+/// const NEEDED_POWER_PER_TICK: u32 = Density::Low.amount() / CREEP_LIFE_TIME;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK as usize / HARVEST_MINERAL_POWER as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_harvest_mineral(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_harvest_mineral(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::HarvestMineral, amount, boost_config)
 }
@@ -568,6 +651,37 @@ pub const fn parts_to_harvest_mineral(amount: u32, boost_config: &BoostSelection
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::HARVEST_DEPOSIT_POWER;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_harvest_deposit};
+/// 
+/// // How much harvest power do you need to harvest 20 resources from a deposit per tick?
+/// const NEEDED_POWER_PER_TICK: u32 = 20;
+/// const EXPECTED_PARTS_NEEDED: usize = (NEEDED_POWER_PER_TICK / HARVEST_DEPOSIT_POWER) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_harvest_deposit(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_harvest_deposit(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::HarvestDeposit, amount, boost_config)
 }

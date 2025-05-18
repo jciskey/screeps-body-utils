@@ -1,7 +1,15 @@
-///! Provides helper methods for interacting with creep bodies.
-///!
-///! This includes generating bodies, calculating body effectiveness,
-///! and similar calculations.
+//! Provides helper methods for interacting with creep bodies.
+//!
+//! This includes generating bodies, calculating body effectiveness,
+//! and similar calculations.
+//!
+//! ```rust
+//! use screeps::HARVEST_POWER;
+//! use screeps_body_utils::body::body_specification::generate_bodyspec_from_string;
+//!
+//! let bodyspec = generate_bodyspec_from_string("6W3M").unwrap();
+//! assert_eq!(HARVEST_POWER * 6, bodyspec.harvest_energy_amount());
+//! ```
 
 mod bodyspec;
 mod body_generation;

@@ -39,7 +39,7 @@ pub struct BoostSelectionConfig {
 }
 
 impl BoostSelectionConfig {
-    pub fn new(boost_tier_choice: BoostTierChoice, allow_partial_boosts: bool) -> BoostSelectionConfig {
+    pub const fn new(boost_tier_choice: BoostTierChoice, allow_partial_boosts: bool) -> BoostSelectionConfig {
         BoostSelectionConfig {
             boost_tier_choice,
             allow_partial_boosts,
