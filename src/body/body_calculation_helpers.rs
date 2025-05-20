@@ -557,7 +557,7 @@ const fn f32_parts_power_for_boost_category(category: &BoostCategory) -> Option<
 /// use screeps::{Part, HARVEST_POWER, SOURCE_ENERGY_CAPACITY, ENERGY_REGEN_TIME};
 /// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, PartsSummary, parts_to_harvest_energy};
 /// 
-/// // How much harvest power do you need to completely harvest a Source before it regenerates?
+/// // How many Work parts do you need to completely harvest a Source before it regenerates?
 /// const NEEDED_POWER_PER_TICK: u32 = SOURCE_ENERGY_CAPACITY / ENERGY_REGEN_TIME;
 /// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK as usize / HARVEST_POWER as usize;
 /// 
@@ -610,7 +610,7 @@ pub const fn parts_to_harvest_energy(amount: u32, boost_config: &BoostSelectionC
 /// use screeps::constants::minerals::Density;
 /// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_harvest_mineral};
 /// 
-/// // How much harvest power do you need to completely harvest a low density Mineral in a single creep lifetime?
+/// // How many Work parts do you need to completely harvest a low density Mineral in a single creep lifetime?
 /// const NEEDED_POWER_PER_TICK: u32 = Density::Low.amount() / CREEP_LIFE_TIME;
 /// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK as usize / HARVEST_MINERAL_POWER as usize;
 /// 
@@ -656,7 +656,7 @@ pub const fn parts_to_harvest_mineral(amount: u32, boost_config: &BoostSelection
 /// use screeps::HARVEST_DEPOSIT_POWER;
 /// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_harvest_deposit};
 /// 
-/// // How much harvest power do you need to harvest 20 resources from a deposit per tick?
+/// // How many Work parts do you need to harvest 20 resources from a deposit per tick?
 /// const NEEDED_POWER_PER_TICK: u32 = 20;
 /// const EXPECTED_PARTS_NEEDED: usize = (NEEDED_POWER_PER_TICK / HARVEST_DEPOSIT_POWER) as usize;
 /// 
@@ -696,6 +696,37 @@ pub const fn parts_to_harvest_deposit(amount: u32, boost_config: &BoostSelection
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::BUILD_POWER;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_build};
+/// 
+/// // How many Work parts do you need to add 100 progress to a construction site per tick?
+/// const NEEDED_POWER_PER_TICK: f32 = 100.0;
+/// const EXPECTED_PARTS_NEEDED: usize = (NEEDED_POWER_PER_TICK / BUILD_POWER as f32) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_build(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_build(amount: f32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_f32(BoostCategory::Build, amount, boost_config)
 }
@@ -710,6 +741,37 @@ pub const fn parts_to_build(amount: f32, boost_config: &BoostSelectionConfig) ->
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::REPAIR_POWER;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_repair};
+/// 
+/// // How many Work parts do you need to repair 500 damage per tick?
+/// const NEEDED_POWER_PER_TICK: f32 = 500.0;
+/// const EXPECTED_PARTS_NEEDED: usize = (NEEDED_POWER_PER_TICK / REPAIR_POWER as f32) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_repair(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_repair(amount: f32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_f32(BoostCategory::Repair, amount, boost_config)
 }
@@ -725,8 +787,39 @@ pub const fn parts_to_repair(amount: f32, boost_config: &BoostSelectionConfig) -
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
-pub const fn parts_to_dismantle(amount: f32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
-    parts_to_action_inner_wrapper_f32(BoostCategory::Dismantle, amount, boost_config)
+///
+/// ```rust
+/// use screeps::DISMANTLE_POWER;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_dismantle};
+/// 
+/// // How many Work parts do you need to deal 500 damage with dismantle per tick?
+/// const NEEDED_POWER_PER_TICK: u32 = 500;
+/// const EXPECTED_PARTS_NEEDED: usize = (NEEDED_POWER_PER_TICK / DISMANTLE_POWER) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_dismantle(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
+pub const fn parts_to_dismantle(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
+    parts_to_action_inner_wrapper_u32(BoostCategory::Dismantle, amount, boost_config)
 }
 
 /// Calculates the Work part configuration necessary to increase progress a specified amount with
@@ -740,6 +833,37 @@ pub const fn parts_to_dismantle(amount: f32, boost_config: &BoostSelectionConfig
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::UPGRADE_CONTROLLER_POWER;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_upgrade_controller};
+/// 
+/// // How many Work parts do you need to add 50 progress to a controller per tick?
+/// const NEEDED_POWER_PER_TICK: f32 = 50.0;
+/// const EXPECTED_PARTS_NEEDED: usize = (NEEDED_POWER_PER_TICK / UPGRADE_CONTROLLER_POWER as f32) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_upgrade_controller(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_upgrade_controller(amount: f32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_f32(BoostCategory::UpgradeController, amount, boost_config)
 }
@@ -755,6 +879,37 @@ pub const fn parts_to_upgrade_controller(amount: f32, boost_config: &BoostSelect
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::ATTACK_POWER;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_attack};
+/// 
+/// // How many Attack parts do you need to deal 500 melee damage per tick?
+/// const NEEDED_POWER_PER_TICK: u32 = 500;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(ATTACK_POWER) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_attack(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_attack(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::Attack, amount, boost_config)
 }
@@ -770,6 +925,37 @@ pub const fn parts_to_attack(amount: u32, boost_config: &BoostSelectionConfig) -
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::RANGED_ATTACK_POWER;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_ranged_attack};
+/// 
+/// // How many RangedAttack parts do you need to deal 500 ranged attack damage per tick?
+/// const NEEDED_POWER_PER_TICK: u32 = 500;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(RANGED_ATTACK_POWER) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_ranged_attack(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_ranged_attack(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::RangedAttack, amount, boost_config)
 }
@@ -785,6 +971,38 @@ pub const fn parts_to_ranged_attack(amount: u32, boost_config: &BoostSelectionCo
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::RANGED_MASS_ATTACK_POWER_RANGE_1;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_ranged_mass_attack};
+/// 
+/// // How many RangedAttack parts do you need to deal 300 ranged mass attack damage at range 1 to
+/// // a single target per tick?
+/// const NEEDED_POWER_PER_TICK: u32 = 300;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(RANGED_MASS_ATTACK_POWER_RANGE_1) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_ranged_mass_attack(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_ranged_mass_attack(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::RangedMassAttack, amount, boost_config)
 }
@@ -799,6 +1017,37 @@ pub const fn parts_to_ranged_mass_attack(amount: u32, boost_config: &BoostSelect
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::HEAL_POWER;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_heal};
+/// 
+/// // How many Heal parts do you need to heal 100 damage at range 1 per tick?
+/// const NEEDED_POWER_PER_TICK: u32 = 100;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(HEAL_POWER) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_heal(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_heal(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::Heal, amount, boost_config)
 }
@@ -813,6 +1062,37 @@ pub const fn parts_to_heal(amount: u32, boost_config: &BoostSelectionConfig) -> 
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::RANGED_HEAL_POWER;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_ranged_heal};
+/// 
+/// // How many Heal parts do you need to heal 60 damage at range > 1 per tick?
+/// const NEEDED_POWER_PER_TICK: u32 = 60;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(RANGED_HEAL_POWER) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_ranged_heal(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_ranged_heal(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::RangedHeal, amount, boost_config)
 }
@@ -827,6 +1107,37 @@ pub const fn parts_to_ranged_heal(amount: u32, boost_config: &BoostSelectionConf
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::CARRY_CAPACITY;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_carry};
+/// 
+/// // How many Carry parts do you need to store 600 resources?
+/// const NEEDED_POWER_PER_TICK: u32 = 600;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(CARRY_CAPACITY) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_carry(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_carry(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::Carry, amount, boost_config)
 }
@@ -841,6 +1152,37 @@ pub const fn parts_to_carry(amount: u32, boost_config: &BoostSelectionConfig) ->
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::{MOVE_POWER, MOVE_COST_PLAIN};
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_reduce_fatigue};
+/// 
+/// // How many Move parts do you need to off-road move a 10-Carry hauler on plains?
+/// const NEEDED_POWER_PER_TICK: u32 = 10 * MOVE_COST_PLAIN;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(MOVE_POWER) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_reduce_fatigue(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_reduce_fatigue(amount: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_u32(BoostCategory::Move, amount, boost_config)
 }
@@ -855,6 +1197,37 @@ pub const fn parts_to_reduce_fatigue(amount: u32, boost_config: &BoostSelectionC
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::CREEP_HITS_PER_PART;
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_absorb_damage};
+/// 
+/// // How many Tough parts do you need to absorb 400 damage?
+/// const NEEDED_POWER_PER_TICK: f32 = 400.0;
+/// const EXPECTED_PARTS_NEEDED: usize = (NEEDED_POWER_PER_TICK / CREEP_HITS_PER_PART as f32) as usize;
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_absorb_damage(NEEDED_POWER_PER_TICK, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_absorb_damage(amount: f32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     parts_to_action_inner_wrapper_f32(BoostCategory::Tough, amount, boost_config)
 }
@@ -872,6 +1245,39 @@ pub const fn parts_to_absorb_damage(amount: f32, boost_config: &BoostSelectionCo
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::{MOVE_POWER, MOVE_COST_PLAIN, Part};
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_move_offroad};
+/// 
+/// // How many Move parts do you need to off-road move a 10-Carry hauler on plains?
+/// const NEEDED_POWER_PER_TICK: u32 = 10 * MOVE_COST_PLAIN;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(MOVE_POWER) as usize;
+///
+/// const body: [Part; 10] = [Part::Carry; 10];
+/// 
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_move_offroad(&body, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_move_offroad(body: &[Part], boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     let mut non_move_parts_count = 0;
     let mut i = 0;
@@ -901,6 +1307,38 @@ pub const fn parts_to_move_offroad(body: &[Part], boost_config: &BoostSelectionC
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::{MOVE_POWER, MOVE_COST_PLAIN};
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_move_offroad_by_parts_count};
+/// 
+/// // How many Move parts do you need to off-road move a 10-Carry hauler on plains?
+/// const NUM_CARRY_PARTS: u32 = 10;
+/// const NEEDED_POWER_PER_TICK: u32 = NUM_CARRY_PARTS * MOVE_COST_PLAIN;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(MOVE_POWER) as usize;
+///
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_move_offroad_by_parts_count(NUM_CARRY_PARTS, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_move_offroad_by_parts_count(num_non_move_parts: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     let fatigue_generated = num_non_move_parts * MOVE_COST_PLAIN;
     parts_to_reduce_fatigue(fatigue_generated, boost_config)
@@ -917,6 +1355,40 @@ pub const fn parts_to_move_offroad_by_parts_count(num_non_move_parts: u32, boost
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::{MOVE_POWER, MOVE_COST_ROAD, Part};
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_move_onroad};
+/// 
+/// // How many Move parts do you need to move a 10-Carry hauler on a road?
+/// const NUM_CARRY_PARTS: u32 = 10;
+/// const NEEDED_POWER_PER_TICK: u32 = NUM_CARRY_PARTS * MOVE_COST_ROAD;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(MOVE_POWER) as usize;
+///
+/// const body: [Part; NUM_CARRY_PARTS as usize] = [Part::Carry; NUM_CARRY_PARTS as usize];
+///
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_move_onroad(&body, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_move_onroad(body: &[Part], boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     let mut non_move_parts_count = 0;
     let mut i = 0;
@@ -944,6 +1416,38 @@ pub const fn parts_to_move_onroad(body: &[Part], boost_config: &BoostSelectionCo
 /// part before adding an additional part.
 ///
 /// The returned number of body parts will total to 50 or less.
+///
+/// ```rust
+/// use screeps::{MOVE_POWER, MOVE_COST_ROAD};
+/// use screeps_body_utils::body::body_calculations::{BoostSelectionConfig, BoostTierChoice, parts_to_move_onroad_by_parts_count};
+/// 
+/// // How many Move parts do you need to move a 10-Carry hauler on a road?
+/// const NUM_CARRY_PARTS: u32 = 10;
+/// const NEEDED_POWER_PER_TICK: u32 = NUM_CARRY_PARTS * MOVE_COST_ROAD;
+/// const EXPECTED_PARTS_NEEDED: usize = NEEDED_POWER_PER_TICK.div_ceil(MOVE_POWER) as usize;
+///
+/// // We want totals for unboosted parts
+/// const boost_config: BoostSelectionConfig = BoostSelectionConfig::new(BoostTierChoice::NoBoosts, false);
+/// const part_totals: [usize; 5] = if let Ok(summary) = parts_to_move_onroad_by_parts_count(NUM_CARRY_PARTS, &boost_config) {
+///   summary.part_totals()
+/// } else {
+///   [0; 5]
+/// };
+///
+/// // Destructure the part totals array for ease of understanding
+/// const total_parts_needed: usize = part_totals[0];
+/// const unboosted_parts_needed: usize = part_totals[1];
+/// const t1_parts_needed: usize = part_totals[2];
+/// const t2_parts_needed: usize = part_totals[3];
+/// const t3_parts_needed: usize = part_totals[4];
+///
+/// // Verify we got the expected number of (unboosted) parts for our goal
+/// assert_eq!(EXPECTED_PARTS_NEEDED, total_parts_needed);
+/// assert_eq!(EXPECTED_PARTS_NEEDED, unboosted_parts_needed);
+/// assert_eq!(0, t1_parts_needed);
+/// assert_eq!(0, t2_parts_needed);
+/// assert_eq!(0, t3_parts_needed);
+/// ```
 pub const fn parts_to_move_onroad_by_parts_count(num_non_move_parts: u32, boost_config: &BoostSelectionConfig) -> Result<PartsSummary, PartsNeededCalculationError> {
     let fatigue_generated = num_non_move_parts * MOVE_COST_ROAD;
     parts_to_reduce_fatigue(fatigue_generated, boost_config)
