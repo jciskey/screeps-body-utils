@@ -432,6 +432,11 @@ pub const T3_TOUGH_MULTIPLIER: f32 = 0.3;
 
 
 /// Abstract representation of attributes that can be boosted.
+///
+/// This allows for identifying boost effects without being tied to a specific boost tier.
+///
+/// While these are primarily actions (build, repair, etc.), they also cover things such as store
+/// capacity, fatigue reduction, and damage reduction.
 #[derive(Debug, PartialEq, Hash, Copy, Clone)]
 pub enum BoostCategory {
     HarvestEnergy,
@@ -452,6 +457,7 @@ pub enum BoostCategory {
 }
 
 impl BoostCategory {
+    /// Returns the [Part] that is used for the action represented by the given [BoostCategory].
     pub const fn get_associated_part_for_category(value: &BoostCategory) -> Part {
         use BoostCategory::*;
         match value {
@@ -473,10 +479,13 @@ impl BoostCategory {
         }
     }
 
+    /// Returns the [Part] that is used for the action represented by this [BoostCategory].
     pub const fn get_associated_part(&self) -> Part {
         BoostCategory::get_associated_part_for_category(self)
     }
 
+    /// Returns a slice with all 3 [AbstractBoosts](AbstractBoost) that enhance the action
+    /// represented by the given [BoostCategory].
     pub const fn get_abstract_boosts_for_category(value: &BoostCategory) -> [AbstractBoost; 3] {
         use BoostCategory::*;
         match value {
@@ -498,6 +507,8 @@ impl BoostCategory {
         }
     }
 
+    /// Returns a slice with all 3 [AbstractBoosts](AbstractBoost) that enhance the action
+    /// represented by this [BoostCategory].
     pub const fn get_abstract_boosts(&self) -> [AbstractBoost; 3] {
         BoostCategory::get_abstract_boosts_for_category(self)
     }
@@ -598,7 +609,7 @@ impl AbstractBoost {
         }
     }
 
-    /// Returns the AbstractBoost variants that are valid boosts for a particular Part variant.
+    /// Returns a slice of the [AbstractBoosts](AbstractBoost) that are valid for a particular [Part].
     pub const fn boosts_for_part(part: &Part) -> &'static [AbstractBoost] {
         match part {
             Part::Work => &WORK_BOOSTS,
@@ -612,7 +623,7 @@ impl AbstractBoost {
         }
     }
 
-    /// Returns the [Part] that can be boosted by a particular boost.
+    /// Returns the [Part] that can be boosted by a particular [AbstractBoost].
     pub const fn part_for_boost(boost: &AbstractBoost) -> Part {
         match boost {
             // Work
@@ -661,12 +672,12 @@ impl AbstractBoost {
         }
     }
 
-    /// Determines the [Part] associated with this boost.
+    /// Determines the [Part] associated with this [AbstractBoost].
     pub const fn associated_part(&self) -> Part {
         AbstractBoost::part_for_boost(self)
     }
 
-    /// Determines the [resource](screeps::ResourceType) associated with the given boost.
+    /// Determines the [resource](screeps::ResourceType) associated with the given [AbstractBoost].
     pub const fn resource_for_boost(boost: &AbstractBoost) -> ResourceType {
         use ResourceType::*;
         use AbstractBoost::*;
@@ -704,12 +715,12 @@ impl AbstractBoost {
         }
     }
 
-    /// Determines the [resource](screeps::ResourceType) associated with this boost.
+    /// Determines the [resource](screeps::ResourceType) associated with this [AbstractBoost].
     pub const fn associated_resource(&self) -> ResourceType {
         AbstractBoost::resource_for_boost(self)
     }
 
-    /// Determines the tier of the given boost.
+    /// Determines the tier of the given [AbstractBoost].
     pub const fn tier_for_boost(boost: &AbstractBoost) -> u8 {
         if AbstractBoost::boost_in_slice(&T3_BOOSTS, boost) {
             3
@@ -726,24 +737,24 @@ impl AbstractBoost {
         }
     }
 
-    /// Determines the tier of this boost.
+    /// Determines the tier of this [AbstractBoost].
     pub const fn tier(&self) -> u8 {
         AbstractBoost::tier_for_boost(self)
     }
 
-    /// Get the immediate resources used to produce the specified boost.
+    /// Get the immediate resources used to produce the specified [AbstractBoost].
     pub const fn reaction_components_for_boost(boost: &AbstractBoost) -> [ResourceType; 2] {
         // Unwrap here is safe, because the ResourceType we get from converting an AbstractBoost
         // will always be one with a set of reaction components.
         boost.associated_resource().reaction_components().unwrap()
     }
 
-    /// Get the immediate resources used to produce this boost.
+    /// Get the immediate resources used to produce this [AbstractBoost].
     pub const fn reaction_components(&self) -> [ResourceType; 2] {
         AbstractBoost::reaction_components_for_boost(self)
     }
 
-    /// Determines the reaction chain for the given boost.
+    /// Determines the reaction chain for the given [AbstractBoost].
     ///
     /// A reaction chain is a slice of [Reactions](crate::boost::reaction::Reaction) that, if
     /// run in-order in your labs, will produce a desired boost resource.
@@ -752,7 +763,7 @@ impl AbstractBoost {
         reaction_chains::get_reaction_chain_for_resource(&resource)
     }
 
-    /// Determines the reaction chain for this boost.
+    /// Determines the reaction chain for this [AbstractBoost].
     ///
     /// A reaction chain is a slice of [Reactions](crate::boost::reaction::Reaction) that, if
     /// run in-order in your labs, will produce a desired boost resource.
@@ -761,7 +772,7 @@ impl AbstractBoost {
     }
 
     /// Returns the amount of time needed to run the lab reaction that produces the specified
-    /// boost.
+    /// [AbstractBoost].
     pub const fn reaction_time_for_boost(boost: &AbstractBoost) -> u32 {
         let resource = boost.associated_resource();
 
@@ -770,23 +781,23 @@ impl AbstractBoost {
         resource.reaction_time().unwrap()
     }
 
-    /// Returns the amount of time needed to run the lab reaction that produces this boost.
+    /// Returns the amount of time needed to run the lab reaction that produces this [AbstractBoost].
     pub const fn reaction_time(&self) -> u32 {
         AbstractBoost::reaction_time_for_boost(self)
     }
 
     /// Returns the amount of time needed to run the reaction chain that produces the specified
-    /// boost.
+    /// [AbstractBoost].
     pub const fn reaction_chain_time_for_boost(boost: &AbstractBoost) -> u32 {
         Reaction::reaction_time_for_chain(boost.reaction_chain())
     }
 
-    /// Returns the amount of time needed to run the reaction chain that produces this boost.
+    /// Returns the amount of time needed to run the reaction chain that produces this [AbstractBoost].
     pub const fn reaction_chain_time(&self) -> u32 {
         AbstractBoost::reaction_chain_time_for_boost(self)
     }
 
-    /// Converts an AbstractBoost into a Boost within a const context.
+    /// Converts an [AbstractBoost] into a [Boost] within a const context.
     pub const fn const_to_boost(value: &AbstractBoost) -> Boost {
         use AbstractBoost::*;
         match value {
@@ -823,7 +834,7 @@ impl AbstractBoost {
         }
     }
 
-    /// Whether the boost has a u32 multiplier.
+    /// Whether the [AbstractBoost] has a u32 multiplier.
     ///
     /// This is the inverse of `has_f32_multiplier`.
     ///
@@ -864,7 +875,7 @@ impl AbstractBoost {
         }
     }
 
-    /// Whether the boost has an f32 multiplier.
+    /// Whether the [AbstractBoost] has an f32 multiplier.
     ///
     /// This is the inverse of `has_u32_multiplier`.
     ///
@@ -873,7 +884,7 @@ impl AbstractBoost {
         !AbstractBoost::has_u32_multiplier(value)
     }
 
-    /// Gets the boost multiplier for this boost.
+    /// Gets the boost multiplier for this [AbstractBoost].
     ///
     /// Returns Some(u32) if the multiplier is a u32, None otherwise.
     pub const fn get_u32_multiplier(value: &AbstractBoost) -> Option<u32> {
@@ -912,7 +923,7 @@ impl AbstractBoost {
         }
     }
 
-    /// Gets the boost multiplier for this boost.
+    /// Gets the boost multiplier for this [AbstractBoost].
     ///
     /// Returns Some(f32) if the multiplier is an f32, None otherwise.
     pub const fn get_f32_multiplier(value: &AbstractBoost) -> Option<f32> {
